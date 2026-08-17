@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "cryptogeckopipelineADF"
+		},
+		"LS_ADLS_Gen2_properties_typeProperties_url": {
+			"value": "https://cryptodatastore.dfs.core.windows.net/"
+		},
+		"LS_AzureSQL_Gold_properties_typeProperties_server": {
+			"value": "cryptosqlserver.database.windows.net"
+		},
+		"LS_AzureSQL_Gold_properties_typeProperties_database": {
+			"value": "cryptoGold"
+		},
+		"LS_CoinGecko_REST_properties_typeProperties_url": {
+			"value": "https://api.coingecko.com/api/v3"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

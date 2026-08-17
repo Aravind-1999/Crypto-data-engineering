@@ -1,0 +1,988 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "cryptogeckopipelineADF"
+		},
+		"LS_ADLS_Gen2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://cryptodatastore.dfs.core.windows.net/"
+		},
+		"LS_AzureSQL_Gold_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "cryptosqlserver.database.windows.net"
+		},
+		"LS_AzureSQL_Gold_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "cryptoGold"
+		},
+		"LS_CoinGecko_REST_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://api.coingecko.com/api/v3"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_ADLS_Gen2')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Store data from coin gecko",
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('LS_ADLS_Gen2_properties_typeProperties_url')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_AzureSQL_Gold')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Connect to SQL gold database",
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('LS_AzureSQL_Gold_properties_typeProperties_server')]",
+					"database": "[parameters('LS_AzureSQL_Gold_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SystemAssignedManagedIdentity"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_CoinGecko_REST')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Connect ADF to coin gecko ",
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('LS_CoinGecko_REST_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Bronze_CoinGecko_JSON')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ADLS_Gen2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "coingecko",
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_Gen2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_CoinGecko_Price_API')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_CoinGecko_REST",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": "coins/markets?vs_currency=usd&ids=bitcoin,ethereum,tether,binancecoin,solana,usd-coin,ripple,dogecoin,cardano,avalanche-2"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_CoinGecko_REST')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Gold_CryptoMarketData')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_Gold",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "GoldID",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "id",
+						"type": "varchar"
+					},
+					{
+						"name": "symbol",
+						"type": "varchar"
+					},
+					{
+						"name": "name",
+						"type": "varchar"
+					},
+					{
+						"name": "current_price",
+						"type": "decimal",
+						"precision": 18,
+						"scale": 6
+					},
+					{
+						"name": "high_24h",
+						"type": "decimal",
+						"precision": 18,
+						"scale": 6
+					},
+					{
+						"name": "low_24h",
+						"type": "decimal",
+						"precision": 18,
+						"scale": 6
+					},
+					{
+						"name": "market_cap",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "market_cap_rank",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "total_volume",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "price_change_24h",
+						"type": "decimal",
+						"precision": 18,
+						"scale": 6
+					},
+					{
+						"name": "price_change_percentage_24h",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "market_cap_change_24h",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "market_cap_change_percentage_24h",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "circulating_supply",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "total_supply",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "max_supply",
+						"type": "decimal",
+						"precision": 20,
+						"scale": 2
+					},
+					{
+						"name": "ath",
+						"type": "decimal",
+						"precision": 18,
+						"scale": 6
+					},
+					{
+						"name": "ath_change_percentage",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "last_updated",
+						"type": "datetime2",
+						"scale": 3
+					},
+					{
+						"name": "ingestion_timestamp",
+						"type": "datetime2",
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "CryptoMarketData"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Gold')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Silver_CryptoPrices')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ADLS_Gen2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "crypto_prices",
+						"fileSystem": "silver"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "ath",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "ath_change_percentage",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "circulating_supply",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "current_price",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "high_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "id",
+						"type": "UTF8"
+					},
+					{
+						"name": "last_updated",
+						"type": "UTF8"
+					},
+					{
+						"name": "low_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "market_cap",
+						"type": "INT64"
+					},
+					{
+						"name": "market_cap_change_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "market_cap_change_percentage_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "market_cap_rank",
+						"type": "INT_16"
+					},
+					{
+						"name": "max_supply",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "name",
+						"type": "UTF8"
+					},
+					{
+						"name": "price_change_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "price_change_percentage_24h",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "symbol",
+						"type": "UTF8"
+					},
+					{
+						"name": "total_supply",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "total_volume",
+						"type": "INT64"
+					},
+					{
+						"name": "ingestion_timestamp",
+						"type": "INT96"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_Gen2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Silver_Crypto_Parquet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ADLS_Gen2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "crypto_prices",
+						"fileSystem": "silver"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_Gen2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CoinGecko_Bronze')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Creating pipeline to get data from coin gecko and store in bronze",
+				"activities": [
+					{
+						"name": "DF_CoinGecko_Bronze",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"additionalHeaders": {
+									"x-cg-demo-api-key": "CG-wwxeN49w1A6mX7mB1hy9rT4y"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "MergeFiles"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_CoinGecko_Price_API",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_Bronze_CoinGecko_JSON",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-08-12T16:54:54Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_CoinGecko_Price_API')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Bronze_CoinGecko_JSON')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Silver_To_Gold')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy_Silver_To_Gold",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"wildcardFolderPath": "crypto_prices",
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "id",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "id",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "symbol",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "symbol",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "name",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "name",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "current_price",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "current_price",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 6,
+											"precision": 18
+										}
+									},
+									{
+										"source": {
+											"name": "high_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "high_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 6,
+											"precision": 18
+										}
+									},
+									{
+										"source": {
+											"name": "low_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "low_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 6,
+											"precision": 18
+										}
+									},
+									{
+										"source": {
+											"name": "market_cap",
+											"type": "Int64",
+											"physicalType": "INT64"
+										},
+										"sink": {
+											"name": "market_cap",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "market_cap_rank",
+											"type": "Int16",
+											"physicalType": "INT_16"
+										},
+										"sink": {
+											"name": "market_cap_rank",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": "total_volume",
+											"type": "Int64",
+											"physicalType": "INT64"
+										},
+										"sink": {
+											"name": "total_volume",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "price_change_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "price_change_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 6,
+											"precision": 18
+										}
+									},
+									{
+										"source": {
+											"name": "price_change_percentage_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "price_change_percentage_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 4,
+											"precision": 10
+										}
+									},
+									{
+										"source": {
+											"name": "market_cap_change_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "market_cap_change_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "market_cap_change_percentage_24h",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "market_cap_change_percentage_24h",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 4,
+											"precision": 10
+										}
+									},
+									{
+										"source": {
+											"name": "circulating_supply",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "circulating_supply",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "total_supply",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "total_supply",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "max_supply",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "max_supply",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 20
+										}
+									},
+									{
+										"source": {
+											"name": "ath",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "ath",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 6,
+											"precision": 18
+										}
+									},
+									{
+										"source": {
+											"name": "ath_change_percentage",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "ath_change_percentage",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 4,
+											"precision": 10
+										}
+									},
+									{
+										"source": {
+											"name": "last_updated",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "last_updated",
+											"type": "DateTime",
+											"physicalType": "datetime2"
+										}
+									},
+									{
+										"source": {
+											"name": "ingestion_timestamp",
+											"type": "DateTime",
+											"physicalType": "INT96"
+										},
+										"sink": {
+											"name": "ingestion_timestamp",
+											"type": "DateTime",
+											"physicalType": "datetime2"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": false,
+									"treatBooleanAsNumber": false,
+									"dateTimeOffsetFormat": "yyyy-MM-dd'T'HH:mm:ss'Z'",
+									"culture": "en-US"
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Silver_CryptoPrices",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_Gold_CryptoMarketData",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-08-15T07:28:38Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Silver_CryptoPrices')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Gold_CryptoMarketData')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_Crypto_Silver')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_Bronze_CoinGecko_JSON",
+								"type": "DatasetReference"
+							},
+							"name": "BronzeSource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DS_Silver_Crypto_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "SilverSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SelectSilverColumns"
+						},
+						{
+							"name": "AddIngestionTimestamp"
+						},
+						{
+							"name": "FilterValidCryptoRecords"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ath as double,",
+						"          ath_change_percentage as double,",
+						"          ath_date as string,",
+						"          atl as double,",
+						"          atl_change_percentage as double,",
+						"          atl_date as string,",
+						"          bitcoin as (usd as integer),",
+						"          circulating_supply as double,",
+						"          current_price as double,",
+						"          ethereum as (usd as double),",
+						"          fully_diluted_valuation as long,",
+						"          high_24h as double,",
+						"          id as string,",
+						"          image as string,",
+						"          last_updated as string,",
+						"          low_24h as double,",
+						"          market_cap as long,",
+						"          market_cap_change_24h as double,",
+						"          market_cap_change_percentage_24h as double,",
+						"          market_cap_rank as short,",
+						"          max_supply as double,",
+						"          name as string,",
+						"          price_change_24h as double,",
+						"          price_change_percentage_24h as double,",
+						"          roi as (currency as string, percentage as double, times as double),",
+						"          symbol as string,",
+						"          total_supply as double,",
+						"          total_volume as long",
+						"     ),",
+						"     allowSchemaDrift: false,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     documentForm: 'documentPerLine') ~> BronzeSource",
+						"BronzeSource select(mapColumn(",
+						"          ath,",
+						"          ath_change_percentage,",
+						"          circulating_supply,",
+						"          current_price,",
+						"          high_24h,",
+						"          id,",
+						"          last_updated,",
+						"          low_24h,",
+						"          market_cap,",
+						"          market_cap_change_24h,",
+						"          market_cap_change_percentage_24h,",
+						"          market_cap_rank,",
+						"          max_supply,",
+						"          name,",
+						"          price_change_24h,",
+						"          price_change_percentage_24h,",
+						"          symbol,",
+						"          total_supply,",
+						"          total_volume",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SelectSilverColumns",
+						"SelectSilverColumns derive(ingestion_timestamp = currentUTC()) ~> AddIngestionTimestamp",
+						"AddIngestionTimestamp filter(!isNull(id) && trim(id) != '') ~> FilterValidCryptoRecords",
+						"FilterValidCryptoRecords sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          ath,",
+						"          ath_change_percentage,",
+						"          circulating_supply,",
+						"          current_price,",
+						"          high_24h,",
+						"          id,",
+						"          last_updated,",
+						"          low_24h,",
+						"          market_cap,",
+						"          market_cap_change_24h,",
+						"          market_cap_change_percentage_24h,",
+						"          market_cap_rank,",
+						"          max_supply,",
+						"          name,",
+						"          price_change_24h,",
+						"          price_change_percentage_24h,",
+						"          symbol,",
+						"          total_supply,",
+						"          total_volume,",
+						"          ingestion_timestamp",
+						"     )) ~> SilverSink"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Bronze_CoinGecko_JSON')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Silver_Crypto_Parquet')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Silver_Crypto')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Run_Silver_DataFlow",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "df_Crypto_Silver",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"BronzeSource": {},
+									"SilverSink": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-08-13T06:31:29Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/df_Crypto_Silver')]"
+			]
+		}
+	]
+}

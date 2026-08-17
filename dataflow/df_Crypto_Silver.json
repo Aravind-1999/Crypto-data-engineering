@@ -27,6 +27,9 @@
 				},
 				{
 					"name": "AddIngestionTimestamp"
+				},
+				{
+					"name": "FilterValidCryptoRecords"
 				}
 			],
 			"scriptLines": [
@@ -88,7 +91,8 @@
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> SelectSilverColumns",
 				"SelectSilverColumns derive(ingestion_timestamp = currentUTC()) ~> AddIngestionTimestamp",
-				"AddIngestionTimestamp sink(allowSchemaDrift: true,",
+				"AddIngestionTimestamp filter(!isNull(id) && trim(id) != '') ~> FilterValidCryptoRecords",
+				"FilterValidCryptoRecords sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     umask: 0022,",

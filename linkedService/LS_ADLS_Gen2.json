@@ -1,0 +1,12 @@
+{
+	"name": "LS_ADLS_Gen2",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Store data from coin gecko",
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://cryptodatastore.dfs.core.windows.net/"
+		}
+	}
+}

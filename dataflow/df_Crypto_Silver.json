@@ -1,0 +1,124 @@
+{
+	"name": "df_Crypto_Silver",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_Bronze_CoinGecko_JSON",
+						"type": "DatasetReference"
+					},
+					"name": "BronzeSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_Silver_Crypto_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "SilverSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SelectSilverColumns"
+				},
+				{
+					"name": "AddIngestionTimestamp"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ath as double,",
+				"          ath_change_percentage as double,",
+				"          ath_date as string,",
+				"          atl as double,",
+				"          atl_change_percentage as double,",
+				"          atl_date as string,",
+				"          bitcoin as (usd as integer),",
+				"          circulating_supply as double,",
+				"          current_price as double,",
+				"          ethereum as (usd as double),",
+				"          fully_diluted_valuation as long,",
+				"          high_24h as double,",
+				"          id as string,",
+				"          image as string,",
+				"          last_updated as string,",
+				"          low_24h as double,",
+				"          market_cap as long,",
+				"          market_cap_change_24h as double,",
+				"          market_cap_change_percentage_24h as double,",
+				"          market_cap_rank as short,",
+				"          max_supply as double,",
+				"          name as string,",
+				"          price_change_24h as double,",
+				"          price_change_percentage_24h as double,",
+				"          roi as (currency as string, percentage as double, times as double),",
+				"          symbol as string,",
+				"          total_supply as double,",
+				"          total_volume as long",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     documentForm: 'documentPerLine') ~> BronzeSource",
+				"BronzeSource select(mapColumn(",
+				"          ath,",
+				"          ath_change_percentage,",
+				"          circulating_supply,",
+				"          current_price,",
+				"          high_24h,",
+				"          id,",
+				"          last_updated,",
+				"          low_24h,",
+				"          market_cap,",
+				"          market_cap_change_24h,",
+				"          market_cap_change_percentage_24h,",
+				"          market_cap_rank,",
+				"          max_supply,",
+				"          name,",
+				"          price_change_24h,",
+				"          price_change_percentage_24h,",
+				"          symbol,",
+				"          total_supply,",
+				"          total_volume",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectSilverColumns",
+				"SelectSilverColumns derive(ingestion_timestamp = currentUTC()) ~> AddIngestionTimestamp",
+				"AddIngestionTimestamp sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          ath,",
+				"          ath_change_percentage,",
+				"          circulating_supply,",
+				"          current_price,",
+				"          high_24h,",
+				"          id,",
+				"          last_updated,",
+				"          low_24h,",
+				"          market_cap,",
+				"          market_cap_change_24h,",
+				"          market_cap_change_percentage_24h,",
+				"          market_cap_rank,",
+				"          max_supply,",
+				"          name,",
+				"          price_change_24h,",
+				"          price_change_percentage_24h,",
+				"          symbol,",
+				"          total_supply,",
+				"          total_volume,",
+				"          ingestion_timestamp",
+				"     )) ~> SilverSink"
+			]
+		}
+	}
+}

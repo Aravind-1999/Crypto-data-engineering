@@ -1,0 +1,102 @@
+{
+	"name": "DS_Silver_CryptoPrices",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_Gen2",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "crypto_prices",
+				"fileSystem": "silver"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "ath",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "ath_change_percentage",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "circulating_supply",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "current_price",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "high_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "id",
+				"type": "UTF8"
+			},
+			{
+				"name": "last_updated",
+				"type": "UTF8"
+			},
+			{
+				"name": "low_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "market_cap",
+				"type": "INT64"
+			},
+			{
+				"name": "market_cap_change_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "market_cap_change_percentage_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "market_cap_rank",
+				"type": "INT_16"
+			},
+			{
+				"name": "max_supply",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "name",
+				"type": "UTF8"
+			},
+			{
+				"name": "price_change_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "price_change_percentage_24h",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "symbol",
+				"type": "UTF8"
+			},
+			{
+				"name": "total_supply",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "total_volume",
+				"type": "INT64"
+			},
+			{
+				"name": "ingestion_timestamp",
+				"type": "INT96"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

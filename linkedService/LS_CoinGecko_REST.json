@@ -1,0 +1,14 @@
+{
+	"name": "LS_CoinGecko_REST",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Connect ADF to coin gecko ",
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://api.coingecko.com/api/v3",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}

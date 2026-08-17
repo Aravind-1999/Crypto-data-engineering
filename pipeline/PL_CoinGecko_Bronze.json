@@ -1,0 +1,58 @@
+{
+	"name": "PL_CoinGecko_Bronze",
+	"properties": {
+		"description": "Creating pipeline to get data from coin gecko and store in bronze",
+		"activities": [
+			{
+				"name": "DF_CoinGecko_Bronze",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"additionalHeaders": {
+							"x-cg-demo-api-key": "CG-wwxeN49w1A6mX7mB1hy9rT4y"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "MergeFiles"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_CoinGecko_Price_API",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_Bronze_CoinGecko_JSON",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-08-12T16:54:54Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

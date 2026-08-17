@@ -1,0 +1,15 @@
+{
+	"name": "cryptogeckopipelineADF",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "southindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "041e4abc-05d2-4e9a-95c0-c9630925c7f5",
+		"tenantId": "88fb2bdd-1886-4f8d-a9ea-a1d7d8b0cfe9"
+	}
+}

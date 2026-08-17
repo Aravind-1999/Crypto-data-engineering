@@ -1,0 +1,16 @@
+{
+	"name": "DS_CoinGecko_Price_API",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_CoinGecko_REST",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": "coins/markets?vs_currency=usd&ids=bitcoin,ethereum,tether,binancecoin,solana,usd-coin,ripple,dogecoin,cardano,avalanche-2"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

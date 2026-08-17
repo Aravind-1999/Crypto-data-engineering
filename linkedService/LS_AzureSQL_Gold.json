@@ -1,0 +1,16 @@
+{
+	"name": "LS_AzureSQL_Gold",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Connect to SQL gold database",
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "cryptosqlserver.database.windows.net",
+			"database": "cryptoGold",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SystemAssignedManagedIdentity"
+		}
+	}
+}

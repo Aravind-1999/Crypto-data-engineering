@@ -22,6 +22,10 @@
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://api.coingecko.com/api/v3"
+		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
 		}
 	},
 	"variables": {
@@ -72,6 +76,19 @@
 					"url": "[parameters('LS_CoinGecko_REST_properties_typeProperties_url')]",
 					"enableServerCertificateValidation": true,
 					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_AzureKeyVault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
 				}
 			},
 			"dependsOn": []
@@ -399,13 +416,20 @@
 					{
 						"name": "DF_CoinGecko_Bronze",
 						"type": "Copy",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "Get_CoinGecko_API_Key",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "0.12:00:00",
 							"retry": 0,
 							"retryIntervalInSeconds": 30,
 							"secureOutput": false,
-							"secureInput": false
+							"secureInput": true
 						},
 						"userProperties": [],
 						"typeProperties": {
@@ -415,7 +439,10 @@
 								"requestInterval": "00.00:00:00.010",
 								"requestMethod": "GET",
 								"additionalHeaders": {
-									"x-cg-demo-api-key": "CG-wwxeN49w1A6mX7mB1hy9rT4y"
+									"x-cg-demo-api-key": {
+										"value": "@activity('Get_CoinGecko_API_Key').output.value",
+										"type": "Expression"
+									}
 								}
 							},
 							"sink": {
@@ -444,6 +471,28 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "Get_CoinGecko_API_Key",
+						"type": "WebActivity",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": true,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://cryptogecko-kv.vault.azure.net/secrets/CoinGecko-Api-Key/5bd1d07068cf41ca92f6d8f669fc1c13?api-version=7.5",
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
 					}
 				],
 				"policy": {
@@ -1098,8 +1147,7 @@
 						"frequency": "Day",
 						"interval": 1,
 						"startTime": "2026-08-20T07:53:00",
-						"timeZone": "India Standard Time",
-						"schedule": {}
+						"timeZone": "India Standard Time"
 					}
 				}
 			},

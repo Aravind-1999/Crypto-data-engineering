@@ -17,6 +17,9 @@
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"value": "https://api.coingecko.com/api/v3"
 		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": "https://cryptogecko-kv.vault.azure.net/"
+		},
 		"containerUri": {
 			"value": ""
 		},

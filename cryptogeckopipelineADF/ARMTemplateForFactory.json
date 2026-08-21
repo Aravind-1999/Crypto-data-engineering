@@ -22,6 +22,10 @@
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://api.coingecko.com/api/v3"
+		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
 		}
 	},
 	"variables": {
@@ -38,13 +42,20 @@
 					{
 						"name": "DF_CoinGecko_Bronze",
 						"type": "Copy",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "Get_CoinGecko_API_Key",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "0.12:00:00",
 							"retry": 0,
 							"retryIntervalInSeconds": 30,
 							"secureOutput": false,
-							"secureInput": false
+							"secureInput": true
 						},
 						"userProperties": [],
 						"typeProperties": {
@@ -54,7 +65,10 @@
 								"requestInterval": "00.00:00:00.010",
 								"requestMethod": "GET",
 								"additionalHeaders": {
-									"x-cg-demo-api-key": "CG-wwxeN49w1A6mX7mB1hy9rT4y"
+									"x-cg-demo-api-key": {
+										"value": "@activity('Get_CoinGecko_API_Key').output.value",
+										"type": "Expression"
+									}
 								}
 							},
 							"sink": {
@@ -83,6 +97,28 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "Get_CoinGecko_API_Key",
+						"type": "WebActivity",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": true,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://cryptogecko-kv.vault.azure.net/secrets/CoinGecko-Api-Key/5bd1d07068cf41ca92f6d8f669fc1c13?api-version=7.5",
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
 					}
 				],
 				"policy": {
@@ -94,6 +130,89 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/DS_CoinGecko_Price_API')]",
 				"[concat(variables('factoryId'), '/datasets/DS_Bronze_CoinGecko_JSON')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CoinGecko_Master')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Execute_Bronze",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_CoinGecko_Bronze",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute_Silver",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute_Bronze",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Silver_Crypto",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute_Gold",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute_Silver",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Silver_To_Gold",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_CoinGecko_Bronze')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_Silver_Crypto')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_Silver_To_Gold')]"
 			]
 		},
 		{
@@ -859,6 +978,37 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/TR_CoinGecko_Master_Daily')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Runs the Coin Gecko pipelines once every 24 hours",
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "PL_CoinGecko_Master",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2026-08-20T07:53:00",
+						"timeZone": "India Standard Time"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_CoinGecko_Master')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/df_Crypto_Silver')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -993,119 +1143,17 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_CoinGecko_Master')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
+			"name": "[concat(parameters('factoryName'), '/LS_AzureKeyVault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"activities": [
-					{
-						"name": "Execute_Bronze",
-						"type": "ExecutePipeline",
-						"dependsOn": [],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_CoinGecko_Bronze",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					},
-					{
-						"name": "Execute_Silver",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "Execute_Bronze",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_Silver_Crypto",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					},
-					{
-						"name": "Execute_Gold",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "Execute_Silver",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_Silver_To_Gold",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/PL_CoinGecko_Bronze')]",
-				"[concat(variables('factoryId'), '/pipelines/PL_Silver_Crypto')]",
-				"[concat(variables('factoryId'), '/pipelines/PL_Silver_To_Gold')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/TR_CoinGecko_Master_Daily')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Runs the Coin Gecko pipelines once every 24 hours",
 				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "PL_CoinGecko_Master",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "ScheduleTrigger",
+				"type": "AzureKeyVault",
 				"typeProperties": {
-					"recurrence": {
-						"frequency": "Day",
-						"interval": 1,
-						"startTime": "2026-08-20T07:53:00",
-						"timeZone": "India Standard Time",
-						"schedule": {}
-					}
+					"baseUrl": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/PL_CoinGecko_Master')]"
-			]
+			"dependsOn": []
 		}
 	]
 }

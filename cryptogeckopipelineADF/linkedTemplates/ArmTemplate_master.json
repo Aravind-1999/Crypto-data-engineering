@@ -11,6 +11,10 @@
 			"type": "string",
 			"defaultValue": "https://cryptodatastore.dfs.core.windows.net/"
 		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
+		},
 		"LS_AzureSQL_Gold_properties_typeProperties_server": {
 			"type": "string",
 			"defaultValue": "cryptosqlserver.database.windows.net"
@@ -22,10 +26,6 @@
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://api.coingecko.com/api/v3"
-		},
-		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
-			"type": "string",
-			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
 		},
 		"containerUri": {
 			"type": "string",
@@ -57,6 +57,9 @@
 					"LS_ADLS_Gen2_properties_typeProperties_url": {
 						"value": "[parameters('LS_ADLS_Gen2_properties_typeProperties_url')]"
 					},
+					"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+						"value": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
+					},
 					"LS_AzureSQL_Gold_properties_typeProperties_server": {
 						"value": "[parameters('LS_AzureSQL_Gold_properties_typeProperties_server')]"
 					},
@@ -65,9 +68,6 @@
 					},
 					"LS_CoinGecko_REST_properties_typeProperties_url": {
 						"value": "[parameters('LS_CoinGecko_REST_properties_typeProperties_url')]"
-					},
-					"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
-						"value": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
 					}
 				}
 			},

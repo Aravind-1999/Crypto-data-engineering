@@ -11,6 +11,10 @@
 			"type": "string",
 			"defaultValue": "https://cryptodatastore.dfs.core.windows.net/"
 		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
+		},
 		"LS_AzureSQL_Gold_properties_typeProperties_server": {
 			"type": "string",
 			"defaultValue": "cryptosqlserver.database.windows.net"
@@ -22,10 +26,6 @@
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://api.coingecko.com/api/v3"
-		},
-		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
-			"type": "string",
-			"defaultValue": "https://cryptogecko-kv.vault.azure.net/"
 		}
 	},
 	"variables": {
@@ -944,6 +944,19 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/LS_AzureKeyVault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/LS_AzureSQL_Gold')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -1103,7 +1116,18 @@
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true) ~> SelectSilverColumns",
 						"SelectSilverColumns derive(ingestion_timestamp = currentUTC()) ~> AddIngestionTimestamp",
-						"AddIngestionTimestamp filter(!isNull(id) && trim(id) != '') ~> FilterValidCryptoRecords",
+						"AddIngestionTimestamp filter(!isNull(id)",
+						"&& trim(id) != ''",
+						"&& !isNull(current_price)",
+						"&& !isNull(last_updated)",
+						"&& current_price > 0",
+						"&& market_cap >= 0",
+						"&& total_volume >= 0",
+						"&& (",
+						"    isNull(high_24h)",
+						"    || isNull(low_24h)",
+						"    || high_24h >= low_24h",
+						")) ~> FilterValidCryptoRecords",
 						"FilterValidCryptoRecords sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     format: 'parquet',",
@@ -1141,19 +1165,6 @@
 				"[concat(variables('factoryId'), '/datasets/DS_Bronze_CoinGecko_JSON')]",
 				"[concat(variables('factoryId'), '/datasets/DS_Silver_Crypto_Parquet')]"
 			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_AzureKeyVault')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureKeyVault",
-				"typeProperties": {
-					"baseUrl": "[parameters('LS_AzureKeyVault_properties_typeProperties_baseUrl')]"
-				}
-			},
-			"dependsOn": []
 		}
 	]
 }

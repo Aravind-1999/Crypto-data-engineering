@@ -8,6 +8,9 @@
 		"LS_ADLS_Gen2_properties_typeProperties_url": {
 			"value": "https://cryptodatastore.dfs.core.windows.net/"
 		},
+		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": "https://cryptogecko-kv.vault.azure.net/"
+		},
 		"LS_AzureSQL_Gold_properties_typeProperties_server": {
 			"value": "cryptosqlserver.database.windows.net"
 		},
@@ -16,9 +19,6 @@
 		},
 		"LS_CoinGecko_REST_properties_typeProperties_url": {
 			"value": "https://api.coingecko.com/api/v3"
-		},
-		"LS_AzureKeyVault_properties_typeProperties_baseUrl": {
-			"value": "https://cryptogecko-kv.vault.azure.net/"
 		}
 	}
 }

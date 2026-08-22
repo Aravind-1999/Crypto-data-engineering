@@ -110,16 +110,6 @@ ADF is integrated with GitHub natively; GitHub Desktop used for file management.
 
 ---
 
-## 🔮 Future Improvements
-
-- Infrastructure as Code (Bicep/Terraform)
-- CI/CD across environments
-- Private endpoints / VNet networking
-- Incremental loading & metadata-driven ingestion
-- Additional crypto data sources
-
----
-
 ## ⭐ Skills Demonstrated
 
 Azure Data Factory · ADLS Gen2 · Azure SQL Database · Key Vault · Managed Identity · Mapping Data Flows · REST API Ingestion · Medallion Architecture · Data Quality · SQL · Power BI · Microsoft Fabric · Azure Monitor · Git/GitHub

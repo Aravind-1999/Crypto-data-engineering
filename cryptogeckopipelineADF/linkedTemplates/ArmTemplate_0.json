@@ -1142,7 +1142,7 @@
 			"properties": {
 				"description": "Runs the Coin Gecko pipelines once every 24 hours",
 				"annotations": [],
-				"runtimeState": "Stopped",
+				"runtimeState": "Started",
 				"pipelines": [
 					{
 						"pipelineReference": {

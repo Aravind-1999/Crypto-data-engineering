@@ -1142,7 +1142,7 @@
 			"properties": {
 				"description": "Runs the Coin Gecko pipelines once every 24 hours",
 				"annotations": [],
-				"runtimeState": "Started",
+				"runtimeState": "Stopped",
 				"pipelines": [
 					{
 						"pipelineReference": {
@@ -1158,7 +1158,8 @@
 						"frequency": "Day",
 						"interval": 1,
 						"startTime": "2026-08-20T07:53:00",
-						"timeZone": "India Standard Time"
+						"timeZone": "India Standard Time",
+						"schedule": {}
 					}
 				}
 			},
